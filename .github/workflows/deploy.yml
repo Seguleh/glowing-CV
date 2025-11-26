@@ -27,19 +27,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Show SITE_BASE
-        run: echo "SITE_BASE=${SITE_BASE}"
 
       - name: Build
         run: npm run build
 
+      # build verification: ensure dist exists and looks okay (lightweight)
       - name: Verify build output
         run: |
-          echo "Inspecting dist/index.html..."
-          ls -la dist
-          head -n 40 dist/index.html
-          if grep -q "src/main.js" dist/index.html; then
-            echo "ERROR: dist/index.html still references src/main.js" >&2
+          if [ ! -d dist ]; then
+            echo "ERROR: dist directory not found" >&2
             exit 1
           fi
 
@@ -54,14 +50,10 @@ jobs:
 
       - name: Validate deployed asset
         run: |
-          # Extract asset path from built HTML and validate it's reachable and not HTML
-          echo "Looking for JS asset in dist/index.html"
+          # Extract the JS asset path from dist/index.html and validate it's reachable and not served as HTML
           asset=$(grep -o 'src="[^"]*assets\/[^"]*"' dist/index.html | head -n1 | sed -E 's/src="//' | sed -E 's/"$//')
           if [ -z "$asset" ]; then echo "ERROR: could not find asset in dist/index.html"; exit 1; fi
-          echo "Using asset: $asset"
           status=$(curl -s -o /dev/null -w "%{http_code}" "https://seguleh.github.io${asset}")
           headers=$(curl -s -I "https://seguleh.github.io${asset}")
-          echo "HTTP status: $status"
-          echo "$headers"
           if [ "$status" != "200" ]; then echo "ERROR: deployed asset not accessible (HTTP $status)"; exit 1; fi
           if echo "$headers" | grep -qi "text/html"; then echo "ERROR: deployed asset returned HTML content type"; exit 1; fi

@@ -1,5 +1,7 @@
 # 📄 CVCheck - CV/Resume ATS Compatibility Checker and Score Reviewer (PDF files)
 
+[![Deploy to GitHub Pages](https://github.com/Seguleh/glowing-CV/actions/workflows/deploy.yml/badge.svg?branch=pagesite)](https://github.com/Seguleh/glowing-CV/actions/workflows/deploy.yml)
+
 CVCheck is a privacy-first, local web application that analyzes PDF resumes for Applicant Tracking System (ATS) compatibility. It provides actionable recommendations to help job seekers optimize their CVs for recruitment algorithms.
 
 ![CVCheck Application Interface](./cvcheck_interface.png)
