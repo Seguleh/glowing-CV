@@ -8,9 +8,10 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 /**
  * Main function to analyze a PDF file
  * @param {File} file - The PDF file to analyze
+ * @param {Object} context - Analysis context (jobProfile, industryProfile)
  * @returns {Promise<Object>} Analysis results
  */
-export async function analyzePDF(file) {
+export async function analyzePDF(file, context = {}) {
     try {
         // Read file as ArrayBuffer
         const arrayBuffer = await file.arrayBuffer()
@@ -24,12 +25,14 @@ export async function analyzePDF(file) {
         // Analyze content structure
         const contentAnalysis = analyzeContent(textContent)
 
-        // Calculate ATS score
+        // Calculate ATS score with context
         const scoreResults = calculateATSScore({
             textContent,
             contentAnalysis,
             fileSize: file.size,
-            pageCount: pdf.numPages
+            pageCount: pdf.numPages,
+            jobProfile: context.jobProfile,
+            industryProfile: context.industryProfile
         })
 
         return {
@@ -41,7 +44,9 @@ export async function analyzePDF(file) {
                 fileName: file.name,
                 fileSize: formatFileSize(file.size),
                 pageCount: pdf.numPages,
-                analyzedAt: new Date().toISOString()
+                analyzedAt: new Date().toISOString(),
+                targetJob: context.jobProfile?.title || 'General',
+                targetIndustry: context.industryProfile?.name || 'General'
             }
         }
     } catch (error) {

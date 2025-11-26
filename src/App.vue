@@ -9,6 +9,16 @@
 
       <!-- Main Content -->
       <main class="main-content">
+        <!-- Selectors (shown before upload) -->
+        <div v-if="!analysisResults && !isAnalyzing" class="selectors-section card fade-in">
+          <h3>📋 Analysis Settings</h3>
+          <p class="section-description">Customize the analysis based on your target role and industry</p>
+          <div class="selectors-grid">
+            <JobSelector v-model="selectedJobId" />
+            <IndustrySelector v-model="selectedIndustryId" />
+          </div>
+        </div>
+
         <UploadZone 
           v-if="!analysisResults" 
           @file-uploaded="handleFileUpload"
@@ -41,10 +51,16 @@
 import { ref } from 'vue'
 import UploadZone from './components/UploadZone.vue'
 import AnalysisResults from './components/AnalysisResults.vue'
+import JobSelector from './components/JobSelector.vue'
+import IndustrySelector from './components/IndustrySelector.vue'
 import { analyzePDF } from './utils/pdfAnalyzer.js'
+import { jobProfiles } from './data/jobProfiles.js'
+import { industryProfiles } from './data/industryProfiles.js'
 
 const isAnalyzing = ref(false)
 const analysisResults = ref(null)
+const selectedJobId = ref('')
+const selectedIndustryId = ref('general')
 
 const handleFileUpload = async (file) => {
   isAnalyzing.value = true
@@ -54,8 +70,15 @@ const handleFileUpload = async (file) => {
     // Simulate analysis delay for better UX
     await new Promise(resolve => setTimeout(resolve, 500))
     
-    // Analyze the PDF
-    const results = await analyzePDF(file)
+    // Get selected profiles
+    const jobProfile = jobProfiles.find(j => j.id === selectedJobId.value)
+    const industryProfile = industryProfiles.find(i => i.id === selectedIndustryId.value)
+    
+    // Analyze the PDF with context
+    const results = await analyzePDF(file, {
+      jobProfile,
+      industryProfile
+    })
     analysisResults.value = results
   } catch (error) {
     console.error('Analysis failed:', error)
@@ -86,6 +109,28 @@ const resetAnalysis = () => {
 .main-content {
   min-height: 400px;
   margin: var(--spacing-lg) 0;
+}
+
+.selectors-section {
+  max-width: 700px;
+  margin: 0 auto var(--spacing-lg) auto;
+  text-align: center;
+}
+
+.selectors-section h3 {
+  margin-bottom: var(--spacing-xs);
+}
+
+.section-description {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
+.selectors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+  text-align: left;
 }
 
 .analyzing-state {

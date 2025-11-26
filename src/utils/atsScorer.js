@@ -4,16 +4,26 @@
  * @returns {Object} Scoring results
  */
 export function calculateATSScore(data) {
-    const { textContent, contentAnalysis, fileSize, pageCount } = data
+    const { textContent, contentAnalysis, fileSize, pageCount, jobProfile, industryProfile } = data
 
     const categories = []
     const recommendations = []
+
+    // Get industry weights (default to 1.0 for all)
+    const weights = industryProfile?.weights || {
+        textExtractability: 1.0,
+        sectionDetection: 1.0,
+        formatting: 1.0,
+        contactInfo: 1.0,
+        contentQuality: 1.0,
+        keywords: 1.0
+    }
 
     // 1. Text Extractability (25 points)
     const textScore = scoreTextExtractability(textContent, contentAnalysis)
     categories.push({
         name: 'Text Extractability',
-        score: textScore.score,
+        score: Math.round(textScore.score * weights.textExtractability),
         maxScore: 25
     })
     recommendations.push(...textScore.recommendations)
@@ -22,7 +32,7 @@ export function calculateATSScore(data) {
     const sectionScore = scoreSectionDetection(contentAnalysis.sections)
     categories.push({
         name: 'Section Detection',
-        score: sectionScore.score,
+        score: Math.round(sectionScore.score * weights.sectionDetection),
         maxScore: 20
     })
     recommendations.push(...sectionScore.recommendations)
@@ -31,7 +41,7 @@ export function calculateATSScore(data) {
     const formatScore = scoreFormatting(textContent, pageCount)
     categories.push({
         name: 'Formatting',
-        score: formatScore.score,
+        score: Math.round(formatScore.score * weights.formatting),
         maxScore: 20
     })
     recommendations.push(...formatScore.recommendations)
@@ -40,7 +50,7 @@ export function calculateATSScore(data) {
     const contactScore = scoreContactInfo(contentAnalysis.contactInfo)
     categories.push({
         name: 'Contact Information',
-        score: contactScore.score,
+        score: Math.round(contactScore.score * weights.contactInfo),
         maxScore: 15
     })
     recommendations.push(...contactScore.recommendations)
@@ -49,7 +59,7 @@ export function calculateATSScore(data) {
     const contentScore = scoreContent(contentAnalysis)
     categories.push({
         name: 'Keywords & Content',
-        score: contentScore.score,
+        score: Math.round(contentScore.score * weights.contentQuality),
         maxScore: 10
     })
     recommendations.push(...contentScore.recommendations)
@@ -62,6 +72,17 @@ export function calculateATSScore(data) {
         maxScore: 10
     })
     recommendations.push(...fileScore.recommendations)
+
+    // 7. Job Match (if job profile selected) - BONUS category
+    if (jobProfile && jobProfile.keywords && jobProfile.keywords.length > 0) {
+        const jobMatchScore = scoreJobMatch(textContent, jobProfile)
+        categories.push({
+            name: `Job Match: ${jobProfile.title}`,
+            score: jobMatchScore.score,
+            maxScore: 15
+        })
+        recommendations.push(...jobMatchScore.recommendations)
+    }
 
     // Calculate overall score
     const totalScore = categories.reduce((sum, cat) => sum + cat.score, 0)
@@ -205,23 +226,79 @@ function scoreContent(analysis) {
 
     // Check for action verbs
     if (analysis.actionVerbs >= 5) {
-        score += 5
+        score += 2
     } else {
         recommendations.push({
             priority: 'medium',
             message: 'Use more action verbs (achieved, managed, led, developed) to describe your accomplishments.'
         })
-        score += 2
+        score += 1
     }
 
     // Check for quantifiable achievements
     if (analysis.hasQuantifiableData) {
-        score += 5
+        score += 2
     } else {
         recommendations.push({
             priority: 'medium',
             message: 'Add quantifiable achievements (e.g., "increased sales by 30%") to demonstrate impact.'
         })
+    }
+
+    // Power words (bonus points)
+    if (analysis.powerWords >= 5) {
+        score += 2
+    } else if (analysis.powerWords >= 3) {
+        score += 1
+    } else {
+        recommendations.push({
+            priority: 'low',
+            message: 'Use more power words (achieved, transformed, pioneered) to strengthen your CV.'
+        })
+    }
+
+    // Clichés (penalty)
+    if (analysis.cliches > 3) {
+        recommendations.push({
+            priority: 'high',
+            message: `Avoid clichés like "team player" or "detail-oriented" (found ${analysis.cliches}). Use specific examples instead.`
+        })
+    } else if (analysis.cliches > 0) {
+        score += 1
+        recommendations.push({
+            priority: 'low',
+            message: 'Minimize clichés. Replace with concrete achievements.'
+        })
+    } else {
+        score += 2
+    }
+
+    // Transition words for cohesion
+    if (analysis.transitionWordCount >= 3) {
+        score += 1
+    } else {
+        recommendations.push({
+            priority: 'low',
+            message: 'Use transition words (furthermore, consequently, resulted in) to improve flow and cohesion.'
+        })
+    }
+
+    // Readability
+    if (analysis.readabilityScore >= 8) {
+        score += 1
+    } else {
+        const avgLen = analysis.avgSentenceLength
+        if (avgLen > 25) {
+            recommendations.push({
+                priority: 'medium',
+                message: `Sentences are too long (avg ${avgLen} words). Aim for 15-20 words per sentence for better readability.`
+            })
+        } else if (avgLen < 10) {
+            recommendations.push({
+                priority: 'low',
+                message: `Sentences are too short (avg ${avgLen} words). Aim for 15-20 words per sentence.`
+            })
+        }
     }
 
     return { score, recommendations }
@@ -245,3 +322,52 @@ function scoreFileOptimization(fileSize, pageCount) {
 
     return { score, recommendations }
 }
+
+function scoreJobMatch(textContent, jobProfile) {
+    let score = 0
+    const recommendations = []
+
+    const lowerText = textContent.toLowerCase()
+    const keywords = jobProfile.keywords
+
+    // Count matched keywords
+    let matchedCount = 0
+    const matchedKeywords = []
+
+    keywords.forEach(keyword => {
+        const keywordLower = keyword.toLowerCase()
+        if (lowerText.includes(keywordLower)) {
+            matchedCount++
+            matchedKeywords.push(keyword)
+        }
+    })
+
+    // Calculate match percentage
+    const matchPercentage = (matchedCount / keywords.length) * 100
+
+    // Score based on match percentage (0-15 points)
+    if (matchPercentage >= 70) {
+        score = 15
+    } else if (matchPercentage >= 50) {
+        score = 12
+        recommendations.push({
+            priority: 'medium',
+            message: `Good keyword match (${Math.round(matchPercentage)}%). Consider adding more ${jobProfile.title}-specific skills.`
+        })
+    } else if (matchPercentage >= 30) {
+        score = 8
+        recommendations.push({
+            priority: 'high',
+            message: `Moderate keyword match (${Math.round(matchPercentage)}%). Add more relevant skills for ${jobProfile.title} positions.`
+        })
+    } else {
+        score = 4
+        recommendations.push({
+            priority: 'high',
+            message: `Low keyword match (${Math.round(matchPercentage)}%). Your CV may not align well with ${jobProfile.title} roles. Consider tailoring your content.`
+        })
+    }
+
+    return { score, recommendations }
+}
+
