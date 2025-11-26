@@ -3,7 +3,7 @@ import { calculateATSScore } from './atsScorer.js'
 import { analyzeContent } from './contentAnalyzer.js'
 
 // Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
 /**
  * Main function to analyze a PDF file
