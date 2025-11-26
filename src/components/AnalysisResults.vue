@@ -44,7 +44,13 @@
           :class="['recommendation-item', `priority-${rec.priority}`]"
         >
           <span class="priority-badge">{{ rec.priority }}</span>
-          <span class="recommendation-text">{{ rec.message }}</span>
+          <div class="rec-content">
+            <span class="recommendation-text">{{ rec.message }}</span>
+            <div v-if="rec.location" class="rec-location">
+              <span class="location-icon">📍</span>
+              <span class="location-text">{{ rec.location }}</span>
+            </div>
+          </div>
         </li>
       </ul>
     </div>
@@ -221,9 +227,34 @@ const exportResults = () => {
   text-align: center;
 }
 
-.recommendation-text {
+.rec-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.recommendation-text {
   color: var(--text-secondary);
+}
+
+.rec-location {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(37, 99, 235, 0.08);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+.location-icon {
+  font-size: 0.9rem;
+}
+
+.location-text {
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 .sections {
