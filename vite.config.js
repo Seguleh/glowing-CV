@@ -2,10 +2,11 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 // https://vite.dev/config/
+const repoBase = process.env.SITE_BASE || '/glowing-CV/'
+
 export default defineConfig({
-  // Ensure correct base path for GitHub Pages (repository pages)
-  // When publishing to https://seguleh.github.io/glowing-CV/ set base to '/glowing-CV/'
-  base: '/glowing-CV/',
+  // Allow overriding base via environment variable SITE_BASE for flexibility
+  base: repoBase,
   plugins: [vue()],
   optimizeDeps: {
     include: ['pdfjs-dist']

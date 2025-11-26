@@ -10,6 +10,9 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      # Ensure the build uses the correct base for repo pages
+      SITE_BASE: '/glowing-CV/'
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -23,6 +26,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Show SITE_BASE
+        run: echo "SITE_BASE=${SITE_BASE}"
 
       - name: Build
         run: npm run build
