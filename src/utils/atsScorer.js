@@ -107,7 +107,8 @@ function scoreTextExtractability(text, analysis) {
     } else {
         recommendations.push({
             priority: 'high',
-            message: 'Very little text was extracted. Your CV might be image-based. Use a text-based PDF format.'
+            message: 'Very little text was extracted. Your CV might be image-based. Use a text-based PDF format.',
+            location: 'Entire CV - recreate using a text-based format'
         })
     }
 
@@ -117,13 +118,15 @@ function scoreTextExtractability(text, analysis) {
     } else if (analysis.wordCount < 200) {
         recommendations.push({
             priority: 'medium',
-            message: 'Your CV seems too short. Aim for 200-1000 words for optimal ATS performance.'
+            message: 'Your CV seems too short. Aim for 200-1000 words for optimal ATS performance.',
+            location: 'Experience and Education sections - add more detail'
         })
         score += 5
     } else {
         recommendations.push({
             priority: 'low',
-            message: 'Your CV is quite long. Consider condensing to 1-2 pages for better ATS compatibility.'
+            message: 'Your CV is quite long. Consider condensing to 1-2 pages for better ATS compatibility.',
+            location: 'Throughout CV - remove less relevant information'
         })
         score += 8
     }
@@ -149,7 +152,8 @@ function scoreSectionDetection(sections) {
         if (!section || !section.found) {
             recommendations.push({
                 priority: 'high',
-                message: `Missing "${sectionName}" section. Add clear section headers for better ATS parsing.`
+                message: `Missing "${sectionName}" section. Add clear section headers for better ATS parsing.`,
+                location: `Add "${sectionName}" section with clear heading`
             })
         }
     })
@@ -167,7 +171,8 @@ function scoreFormatting(text, pageCount) {
     } else {
         recommendations.push({
             priority: 'medium',
-            message: `Your CV has ${pageCount} pages. Keep it to 1-2 pages for better ATS compatibility.`
+            message: `Your CV has ${pageCount} pages. Keep it to 1-2 pages for better ATS compatibility.`,
+            location: 'Throughout CV - condense content'
         })
         score += 5
     }
@@ -179,7 +184,8 @@ function scoreFormatting(text, pageCount) {
     if (specialCharCount > 50) {
         recommendations.push({
             priority: 'low',
-            message: 'Reduce special characters and symbols. Use standard ASCII characters when possible.'
+            message: 'Reduce special characters and symbols. Use standard ASCII characters when possible.',
+            location: 'Throughout CV - replace special symbols'
         })
     }
 
@@ -195,7 +201,8 @@ function scoreContactInfo(contactInfo) {
     } else {
         recommendations.push({
             priority: 'high',
-            message: 'No email address detected. Add your email address for recruiters to contact you.'
+            message: 'No email address detected. Add your email address for recruiters to contact you.',
+            location: 'Contact section at top of CV'
         })
     }
 
@@ -204,7 +211,8 @@ function scoreContactInfo(contactInfo) {
     } else {
         recommendations.push({
             priority: 'medium',
-            message: 'No phone number detected. Consider adding your phone number.'
+            message: 'No phone number detected. Consider adding your phone number.',
+            location: 'Contact section at top of CV'
         })
     }
 
@@ -213,7 +221,8 @@ function scoreContactInfo(contactInfo) {
     } else {
         recommendations.push({
             priority: 'low',
-            message: 'No LinkedIn profile detected. Adding your LinkedIn can improve your professional presence.'
+            message: 'No LinkedIn profile detected. Adding your LinkedIn can improve your professional presence.',
+            location: 'Contact section at top of CV'
         })
     }
 
@@ -230,7 +239,8 @@ function scoreContent(analysis) {
     } else {
         recommendations.push({
             priority: 'medium',
-            message: 'Use more action verbs (achieved, managed, led, developed) to describe your accomplishments.'
+            message: 'Use more action verbs (achieved, managed, led, developed) to describe your accomplishments.',
+            location: 'Experience section - start bullet points with action verbs'
         })
         score += 1
     }
@@ -241,7 +251,8 @@ function scoreContent(analysis) {
     } else {
         recommendations.push({
             priority: 'medium',
-            message: 'Add quantifiable achievements (e.g., "increased sales by 30%") to demonstrate impact.'
+            message: 'Add quantifiable achievements (e.g., "increased sales by 30%") to demonstrate impact.',
+            location: 'Experience section - add metrics to accomplishments'
         })
     }
 
@@ -253,7 +264,8 @@ function scoreContent(analysis) {
     } else {
         recommendations.push({
             priority: 'low',
-            message: 'Use more power words (achieved, transformed, pioneered) to strengthen your CV.'
+            message: 'Use more power words (achieved, transformed, pioneered) to strengthen your CV.',
+            location: 'Experience and Summary sections'
         })
     }
 
@@ -261,13 +273,15 @@ function scoreContent(analysis) {
     if (analysis.cliches > 3) {
         recommendations.push({
             priority: 'high',
-            message: `Avoid clichés like "team player" or "detail-oriented" (found ${analysis.cliches}). Use specific examples instead.`
+            message: `Avoid clichés like "team player" or "detail-oriented" (found ${analysis.cliches}). Use specific examples instead.`,
+            location: 'Summary and Experience sections - replace with concrete examples'
         })
     } else if (analysis.cliches > 0) {
         score += 1
         recommendations.push({
             priority: 'low',
-            message: 'Minimize clichés. Replace with concrete achievements.'
+            message: 'Minimize clichés. Replace with concrete achievements.',
+            location: 'Summary section'
         })
     } else {
         score += 2
@@ -279,7 +293,8 @@ function scoreContent(analysis) {
     } else {
         recommendations.push({
             priority: 'low',
-            message: 'Use transition words (furthermore, consequently, resulted in) to improve flow and cohesion.'
+            message: 'Use transition words (furthermore, consequently, resulted in) to improve flow and cohesion.',
+            location: 'Experience descriptions'
         })
     }
 
@@ -291,12 +306,14 @@ function scoreContent(analysis) {
         if (avgLen > 25) {
             recommendations.push({
                 priority: 'medium',
-                message: `Sentences are too long (avg ${avgLen} words). Aim for 15-20 words per sentence for better readability.`
+                message: `Sentences are too long (avg ${avgLen} words). Aim for 15-20 words per sentence for better readability.`,
+                location: 'Throughout CV - break long sentences'
             })
         } else if (avgLen < 10) {
             recommendations.push({
                 priority: 'low',
-                message: `Sentences are too short (avg ${avgLen} words). Aim for 15-20 words per sentence.`
+                message: `Sentences are too short (avg ${avgLen} words). Aim for 15-20 words per sentence.`,
+                location: 'Throughout CV - combine short sentences'
             })
         }
     }
@@ -315,7 +332,8 @@ function scoreFileOptimization(fileSize, pageCount) {
     } else {
         recommendations.push({
             priority: 'low',
-            message: 'File size is large. Optimize your PDF to reduce file size for faster processing.'
+            message: 'File size is large. Optimize your PDF to reduce file size for faster processing.',
+            location: 'PDF export settings - reduce image quality or compress'
         })
         score += 2
     }
@@ -345,29 +363,52 @@ function scoreJobMatch(textContent, jobProfile) {
     // Calculate match percentage
     const matchPercentage = (matchedCount / keywords.length) * 100
 
+    // Adjust thresholds based on seniority level
+    const level = jobProfile.level || 'mid'
+    let excellentThreshold, goodThreshold, fairThreshold
+
+    if (level === 'executive') {
+        // C-suite: Higher expectations for strategic keywords
+        excellentThreshold = 60
+        goodThreshold = 40
+        fairThreshold = 25
+    } else if (level === 'senior') {
+        // Senior: Moderate-high expectations
+        excellentThreshold = 65
+        goodThreshold = 45
+        fairThreshold = 30
+    } else {
+        // Mid-level: Standard expectations
+        excellentThreshold = 70
+        goodThreshold = 50
+        fairThreshold = 30
+    }
+
     // Score based on match percentage (0-15 points)
-    if (matchPercentage >= 70) {
+    if (matchPercentage >= excellentThreshold) {
         score = 15
-    } else if (matchPercentage >= 50) {
+    } else if (matchPercentage >= goodThreshold) {
         score = 12
         recommendations.push({
             priority: 'medium',
-            message: `Good keyword match (${Math.round(matchPercentage)}%). Consider adding more ${jobProfile.title}-specific skills.`
+            message: `Good keyword match (${Math.round(matchPercentage)}%). Consider adding more ${jobProfile.title}-specific skills.`,
+            location: 'Skills section or Experience descriptions'
         })
-    } else if (matchPercentage >= 30) {
+    } else if (matchPercentage >= fairThreshold) {
         score = 8
         recommendations.push({
             priority: 'high',
-            message: `Moderate keyword match (${Math.round(matchPercentage)}%). Add more relevant skills for ${jobProfile.title} positions.`
+            message: `Moderate keyword match (${Math.round(matchPercentage)}%). Add more relevant skills for ${jobProfile.title} positions.`,
+            location: 'Skills section and Experience bullet points'
         })
     } else {
         score = 4
         recommendations.push({
             priority: 'high',
-            message: `Low keyword match (${Math.round(matchPercentage)}%). Your CV may not align well with ${jobProfile.title} roles. Consider tailoring your content.`
+            message: `Low keyword match (${Math.round(matchPercentage)}%). Your CV may not align well with ${jobProfile.title} roles. Consider tailoring your content.`,
+            location: 'Throughout CV - especially Skills, Experience, and Summary sections'
         })
     }
 
     return { score, recommendations }
 }
-
