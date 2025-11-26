@@ -1,4 +1,4 @@
-# 📄 CVCheck - ATS Compatibility Checker
+# 📄 CVCheck - CV/Resume ATS Compatibility Checker and Score Reviewer (PDF files)
 
 CVCheck is a privacy-first, local web application that analyzes PDF resumes for Applicant Tracking System (ATS) compatibility. It provides actionable recommendations to help job seekers optimize their CVs for recruitment algorithms.
 
