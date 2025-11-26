@@ -2,7 +2,7 @@
 
 CVCheck is a privacy-first, local web application that analyzes PDF resumes for Applicant Tracking System (ATS) compatibility. It provides actionable recommendations to help job seekers optimize their CVs for recruitment algorithms.
 
-![CVCheck Application Interface](/C:/Users/aezhc/.gemini/antigravity/brain/d45fa7a2-1b59-42a1-ba48-b0f43b0e5240/cvcheck_interface_1764150849932.png)
+![CVCheck Application Interface](./cvcheck_interface.png)
 
 ## ✨ Key Features
 
