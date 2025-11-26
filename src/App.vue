@@ -3,7 +3,7 @@
     <div class="container">
       <!-- Header -->
       <header class="header fade-in">
-        <h1>📄 CVCheck</h1>
+        <h1>📄 CVCheck (PDF only)</h1>
         <p class="subtitle">Optimize your resume for Applicant Tracking Systems</p>
       </header>
 
