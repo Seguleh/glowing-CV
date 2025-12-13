@@ -1,10 +1,12 @@
+import { analyzeFormatting } from './formattingAnalyzer.js'
+
 /**
  * Calculate ATS compatibility score based on various criteria
  * @param {Object} data - Analysis data
  * @returns {Object} Scoring results
  */
 export function calculateATSScore(data) {
-    const { textContent, contentAnalysis, fileSize, pageCount, jobProfile, industryProfile } = data
+    const { textContent, contentAnalysis, fileSize, pageCount, jobProfile, industryProfile, formattingData } = data
 
     const categories = []
     const recommendations = []
@@ -38,7 +40,7 @@ export function calculateATSScore(data) {
     recommendations.push(...sectionScore.recommendations)
 
     // 3. Formatting (20 points)
-    const formatScore = scoreFormatting(textContent, pageCount)
+    const formatScore = scoreFormatting(textContent, pageCount, formattingData)
     categories.push({
         name: 'Formatting',
         score: Math.round(formatScore.score * weights.formatting),
@@ -161,20 +163,20 @@ function scoreSectionDetection(sections) {
     return { score, recommendations }
 }
 
-function scoreFormatting(text, pageCount) {
-    let score = 10 // Base score
+function scoreFormatting(text, pageCount, formattingData) {
+    let score = 5 // Base score
     const recommendations = []
 
     // Check page count (1-2 pages is ideal)
     if (pageCount <= 2) {
-        score += 10
+        score += 5
     } else {
         recommendations.push({
             priority: 'medium',
             message: `Your CV has ${pageCount} pages. Keep it to 1-2 pages for better ATS compatibility.`,
             location: 'Throughout CV - condense content'
         })
-        score += 5
+        score += 2
     }
 
     // Check for special characters that might cause issues
@@ -187,6 +189,56 @@ function scoreFormatting(text, pageCount) {
             message: 'Reduce special characters and symbols. Use standard ASCII characters when possible.',
             location: 'Throughout CV - replace special symbols'
         })
+    } else {
+        score += 2
+    }
+
+    // Advanced formatting analysis (if data available)
+    if (formattingData && formattingData.fontSizes && formattingData.fontSizes.length > 0) {
+        const formatting = analyzeFormatting(formattingData)
+
+        // Font consistency check
+        if (formatting.fontConsistency.uniqueFontCount <= 2) {
+            score += 4
+        } else if (formatting.fontConsistency.uniqueFontCount <= 3) {
+            score += 2
+        } else {
+            recommendations.push({
+                priority: 'medium',
+                message: `Multiple fonts detected (${formatting.fontConsistency.uniqueFontCount}). Stick to 1-2 fonts for professional appearance.`,
+                location: 'Throughout CV - standardize font choices'
+            })
+            score += 1
+        }
+
+        // Font size consistency
+        if (formatting.fontSizeVariance <= 4) {
+            score += 3
+        } else if (formatting.fontSizeVariance <= 6) {
+            score += 2
+        } else {
+            recommendations.push({
+                priority: 'low',
+                message: `Inconsistent font sizes detected (${formatting.fontSizeVariance} different sizes). Use consistent sizing for body text.`,
+                location: 'Throughout CV - standardize font sizes'
+            })
+            score += 1
+        }
+
+        // Spacing consistency
+        if (formatting.spacingConsistency) {
+            score += 3
+        } else {
+            recommendations.push({
+                priority: 'low',
+                message: 'Inconsistent line spacing detected. Use uniform spacing for better readability.',
+                location: 'Throughout CV - adjust line spacing settings'
+            })
+            score += 1
+        }
+    } else {
+        // If no formatting data, give partial credit
+        score += 5
     }
 
     return { score, recommendations }
@@ -348,15 +400,18 @@ function scoreJobMatch(textContent, jobProfile) {
     const lowerText = textContent.toLowerCase()
     const keywords = jobProfile.keywords
 
-    // Count matched keywords
+    // Count matched and missing keywords
     let matchedCount = 0
     const matchedKeywords = []
+    const missingKeywords = []
 
     keywords.forEach(keyword => {
         const keywordLower = keyword.toLowerCase()
         if (lowerText.includes(keywordLower)) {
             matchedCount++
             matchedKeywords.push(keyword)
+        } else {
+            missingKeywords.push(keyword)
         }
     })
 
@@ -384,28 +439,36 @@ function scoreJobMatch(textContent, jobProfile) {
         fairThreshold = 30
     }
 
+    // Get sample missing keywords for recommendations
+    const getSampleKeywords = (count) => {
+        return missingKeywords.slice(0, count).join(', ')
+    }
+
     // Score based on match percentage (0-15 points)
     if (matchPercentage >= excellentThreshold) {
         score = 15
     } else if (matchPercentage >= goodThreshold) {
         score = 12
+        const samples = getSampleKeywords(3)
         recommendations.push({
             priority: 'medium',
-            message: `Good keyword match (${Math.round(matchPercentage)}%). Consider adding more ${jobProfile.title}-specific skills.`,
+            message: `Good keyword match (${Math.round(matchPercentage)}%). Consider adding: ${samples}`,
             location: 'Skills section or Experience descriptions'
         })
     } else if (matchPercentage >= fairThreshold) {
         score = 8
+        const samples = getSampleKeywords(5)
         recommendations.push({
             priority: 'high',
-            message: `Moderate keyword match (${Math.round(matchPercentage)}%). Add more relevant skills for ${jobProfile.title} positions.`,
+            message: `Moderate keyword match (${Math.round(matchPercentage)}%). Missing keywords: ${samples}${missingKeywords.length > 5 ? ', and more' : ''}`,
             location: 'Skills section and Experience bullet points'
         })
     } else {
         score = 4
+        const samples = getSampleKeywords(5)
         recommendations.push({
             priority: 'high',
-            message: `Low keyword match (${Math.round(matchPercentage)}%). Your CV may not align well with ${jobProfile.title} roles. Consider tailoring your content.`,
+            message: `Low keyword match (${Math.round(matchPercentage)}%). Add relevant keywords like: ${samples}${missingKeywords.length > 5 ? ', and more' : ''}`,
             location: 'Throughout CV - especially Skills, Experience, and Summary sections'
         })
     }

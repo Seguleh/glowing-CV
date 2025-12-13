@@ -11,7 +11,7 @@
       <div class="upload-icon">📤</div>
       <h2>{{ isDragOver ? 'Drop your CV here' : 'Upload Your Resume' }}</h2>
       <p v-if="!isAnalyzing">
-        Drag and drop your PDF resume here, or click to browse
+        Drag and drop your PDF or DOCX resume here, or click to browse
       </p>
       <p v-else class="analyzing-text">
         Analyzing...
@@ -20,13 +20,13 @@
       <input 
         ref="fileInput"
         type="file"
-        accept=".pdf,application/pdf"
+        accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         @change="handleFileSelect"
         style="display: none"
       />
       
       <div class="file-info" v-if="!isAnalyzing">
-        <small>Supported format: PDF only • Max size: 10MB</small>
+        <small>Supported formats: PDF, DOCX • Max size: 10MB</small>
       </div>
     </div>
     
@@ -92,9 +92,17 @@ const handleDrop = (event) => {
 }
 
 const validateAndEmit = (file) => {
-  // Check if it's a PDF
-  if (file.type !== 'application/pdf') {
-    alert('Please upload a PDF file')
+  // Check file type
+  const validTypes = [
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ]
+  
+  // Also check extension as fallback
+  const isDocx = file.name.toLowerCase().endsWith('.docx')
+  
+  if (!validTypes.includes(file.type) && !isDocx) {
+    alert('Please upload a PDF or DOCX file')
     return
   }
   

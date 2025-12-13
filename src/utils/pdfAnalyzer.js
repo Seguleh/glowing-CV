@@ -1,17 +1,14 @@
 import * as pdfjsLib from 'pdfjs-dist'
-import { calculateATSScore } from './atsScorer.js'
-import { analyzeContent } from './contentAnalyzer.js'
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
 /**
- * Main function to analyze a PDF file
+ * Extract text and metadata from a PDF file
  * @param {File} file - The PDF file to analyze
- * @param {Object} context - Analysis context (jobProfile, industryProfile)
- * @returns {Promise<Object>} Analysis results
+ * @returns {Promise<Object>} Extracted data
  */
-export async function analyzePDF(file, context = {}) {
+export async function extractPdfData(file) {
     try {
         // Read file as ArrayBuffer
         const arrayBuffer = await file.arrayBuffer()
@@ -19,62 +16,79 @@ export async function analyzePDF(file, context = {}) {
         // Load PDF document
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
 
-        // Extract text from all pages
-        const textContent = await extractAllText(pdf)
-
-        // Analyze content structure
-        const contentAnalysis = analyzeContent(textContent)
-
-        // Calculate ATS score with context
-        const scoreResults = calculateATSScore({
-            textContent,
-            contentAnalysis,
-            fileSize: file.size,
-            pageCount: pdf.numPages,
-            jobProfile: context.jobProfile,
-            industryProfile: context.industryProfile
-        })
+        // Extract text and formatting from all pages
+        const extracted = await extractAllText(pdf)
 
         return {
-            overallScore: scoreResults.overallScore,
-            categories: scoreResults.categories,
-            recommendations: scoreResults.recommendations,
-            sections: contentAnalysis.sections,
+            text: extracted.text,
+            formatting: extracted.formatting,
+            pageCount: pdf.numPages,
             metadata: {
-                fileName: file.name,
-                fileSize: formatFileSize(file.size),
-                pageCount: pdf.numPages,
-                analyzedAt: new Date().toISOString(),
-                targetJob: context.jobProfile?.title || 'General',
-                targetIndustry: context.industryProfile?.name || 'General'
+                pageCount: pdf.numPages
             }
         }
     } catch (error) {
-        console.error('PDF Analysis Error:', error)
-        throw new Error('Failed to analyze PDF: ' + error.message)
+        console.error('PDF Extraction Error:', error)
+        throw new Error('Failed to extract PDF data: ' + error.message)
     }
 }
 
+
 /**
- * Extract text from all pages of a PDF
+ * Extract text and formatting information from all pages of a PDF
  * @param {Object} pdf - PDF.js document object
- * @returns {Promise<string>} Extracted text
+ * @returns {Promise<Object>} Extracted text and formatting data
  */
 async function extractAllText(pdf) {
     let fullText = ''
+    const fontSizes = []
+    const fonts = new Set()
+    const lineHeights = []
 
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum)
         const textContent = await page.getTextContent()
 
-        const pageText = textContent.items
-            .map(item => item.str)
-            .join(' ')
+        let previousY = null
 
-        fullText += pageText + '\n\n'
+        textContent.items.forEach((item, index) => {
+            // Extract text
+            fullText += item.str + ' '
+
+            // Extract font information
+            if (item.height) {
+                fontSizes.push(item.height)
+            }
+
+            if (item.fontName) {
+                fonts.add(item.fontName)
+            }
+
+            // Calculate line spacing
+            if (previousY !== null && item.transform && item.transform[5]) {
+                const currentY = item.transform[5]
+                const spacing = Math.abs(currentY - previousY)
+                if (spacing > 0 && spacing < 100) { // Filter out page breaks
+                    lineHeights.push(spacing)
+                }
+            }
+
+            if (item.transform && item.transform[5]) {
+                previousY = item.transform[5]
+            }
+        })
+
+        fullText += '\n\n'
     }
 
-    return fullText.trim()
+    return {
+        text: fullText.trim(),
+        formatting: {
+            fontSizes: fontSizes,
+            uniqueFonts: Array.from(fonts),
+            lineHeights: lineHeights
+        }
+    }
 }
 
 /**

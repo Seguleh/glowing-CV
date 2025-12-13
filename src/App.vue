@@ -53,7 +53,7 @@ import UploadZone from './components/UploadZone.vue'
 import AnalysisResults from './components/AnalysisResults.vue'
 import JobSelector from './components/JobSelector.vue'
 import IndustrySelector from './components/IndustrySelector.vue'
-import { analyzePDF } from './utils/pdfAnalyzer.js'
+import { analyzeDocument } from './utils/documentProcessor.js'
 import { jobProfiles } from './data/jobProfiles.js'
 import { industryProfiles } from './data/industryProfiles.js'
 
@@ -74,8 +74,8 @@ const handleFileUpload = async (file) => {
     const jobProfile = jobProfiles.find(j => j.id === selectedJobId.value)
     const industryProfile = industryProfiles.find(i => i.id === selectedIndustryId.value)
     
-    // Analyze the PDF with context
-    const results = await analyzePDF(file, {
+    // Analyze the document (PDF or DOCX) with context
+    const results = await analyzeDocument(file, {
       jobProfile,
       industryProfile
     })
